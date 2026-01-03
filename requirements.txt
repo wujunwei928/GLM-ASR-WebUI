@@ -1,0 +1,11 @@
+torch>=2.9.1
+torchaudio>=2.9.1
+torchcodec>=0.9.0
+git+https://github.com/huggingface/transformers
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+jinja2>=3.1.2
+python-multipart>=0.0.6
+aiofiles>=23.0.0
+ffmpeg-python>=0.2.0
+accelerate>=0.20.0

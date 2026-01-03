@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* 霓虹配色方案 */
+            --neon-blue: #00f3ff;
+            --neon-pink: #ff00ff;
+            --neon-green: #00ff88;
+            --neon-purple: #bf00ff;
+            --dark-bg: #0a0e27;
+            --darker-bg: #050814;
+            --glass-bg: rgba(10, 14, 39, 0.7);
+            --glass-border: rgba(0, 243, 255, 0.2);
+
+            /* 间距和尺寸 */
+            --spacing-xs: 8px;
+            --spacing-sm: 16px;
+            --spacing-md: 24px;
+            --spacing-lg: 32px;
+            --spacing-xl: 48px;
+
+            /* 圆角 */
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+
+            /* 过渡 */
+            --transition-fast: 0.2s;
+            --transition-normal: 0.3s;
+            --transition-slow: 0.5s;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Mono', monospace;
+            background: var(--darker-bg);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* 动态粒子背景 */
+        #particleCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        /* CRT 扫描线效果 */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15),
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+        }
+
+        /* 主容器 */
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--spacing-lg);
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 头部 */
+        .header {
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+            position: relative;
+        }
+
+        .header h1 {
+            font-family: 'Syncopate', sans-serif;
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(0, 243, 255, 0.5);
+            margin-bottom: var(--spacing-sm);
+            position: relative;
+            animation: glowPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% {
+                filter: drop-shadow(0 0 20px rgba(0, 243, 255, 0.6));
+            }
+            50% {
+                filter: drop-shadow(0 0 40px rgba(255, 0, 255, 0.8));
+            }
+        }
+
+        .header-subtitle {
+            font-size: 1rem;
+            color: var(--neon-green);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* 玻璃拟态卡片 */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+            box-shadow:
+                0 8px 32px rgba(0, 243, 255, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(0, 243, 255, 0.1),
+                transparent
+            );
+            transition: left 0.5s;
+        }
+
+        .glass-card:hover::before {
+            left: 100%;
+        }
+
+        /* 标签导航 */
+        .tabs {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            flex: 1;
+            min-width: 200px;
+            padding: var(--spacing-md);
+            background: rgba(0, 243, 255, 0.05);
+            border: 2px solid var(--glass-border);
+            border-radius: var(--radius-md);
+            color: var(--neon-blue);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .tab::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-pink));
+            opacity: 0;
+            transition: opacity var(--transition-normal);
+        }
+
+        .tab:hover {
+            border-color: var(--neon-blue);
+            box-shadow:
+                0 0 20px rgba(0, 243, 255, 0.3),
+                inset 0 0 20px rgba(0, 243, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, rgba(0, 243, 255, 0.2), rgba(255, 0, 255, 0.2));
+            border-color: var(--neon-blue);
+            box-shadow:
+                0 0 30px rgba(0, 243, 255, 0.5),
+                inset 0 0 30px rgba(0, 243, 255, 0.1);
+        }
+
+        .tab span {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 标签内容区域 */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 上传区域 */
+        .upload-area {
+            border: 3px dashed var(--glass-border);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-xl);
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            background: rgba(0, 243, 255, 0.02);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 243, 255, 0.1), transparent);
+            transform: translate(-50%, -50%);
+            transition: all 0.5s;
+        }
+
+        .upload-area:hover {
+            border-color: var(--neon-blue);
+            background: rgba(0, 243, 255, 0.05);
+            box-shadow:
+                0 0 40px rgba(0, 243, 255, 0.2),
+                inset 0 0 40px rgba(0, 243, 255, 0.05);
+        }
+
+        .upload-area:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .upload-area.dragover {
+            border-color: var(--neon-green);
+            background: rgba(0, 255, 136, 0.05);
+            animation: pulseBorder 1s infinite;
+        }
+
+        @keyframes pulseBorder {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 40px rgba(0, 255, 136, 0.6);
+            }
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: var(--spacing-md);
+            display: block;
+            filter: drop-shadow(0 0 20px rgba(0, 243, 255, 0.5));
+        }
+
+        .upload-area h3 {
+            font-size: 1.2rem;
+            color: var(--neon-blue);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .upload-area p {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* 输入框 */
+        .input-group {
+            margin-bottom: var(--spacing-md);
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: var(--spacing-sm);
+            color: var(--neon-green);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: var(--spacing-md);
+            background: rgba(0, 243, 255, 0.05);
+            border: 2px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            color: #ffffff;
+            font-family: 'Space Mono', monospace;
+            font-size: 1rem;
+            transition: all var(--transition-normal);
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--neon-blue);
+            box-shadow:
+                0 0 20px rgba(0, 243, 255, 0.3),
+                inset 0 0 20px rgba(0, 243, 255, 0.1);
+        }
+
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* 示例音频样式 */
+        .example-audios {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-sm);
+        }
+
+        .example-audio-item {
+            padding: var(--spacing-md);
+            background: rgba(0, 243, 255, 0.05);
+            border: 2px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .example-audio-item:hover {
+            border-color: var(--neon-blue);
+            background: rgba(0, 243, 255, 0.1);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .audio-tag {
+            font-size: 1.2rem;
+        }
+
+        .audio-name {
+            color: var(--neon-blue);
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        /* 按钮样式 */
+        .btn {
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+            border: none;
+            border-radius: var(--radius-sm);
+            color: #ffffff;
+            font-family: 'Space Mono', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn:hover {
+            box-shadow:
+                0 0 30px rgba(0, 243, 255, 0.6),
+                0 0 60px rgba(191, 0, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: rgba(255, 255, 255, 0.1);
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff0055, #ff0080);
+        }
+
+        .btn-danger:hover {
+            box-shadow:
+                0 0 30px rgba(255, 0, 85, 0.6),
+                0 0 60px rgba(255, 0, 128, 0.4);
+        }
+
+        /* 录音控制 */
+        .record-controls {
+            text-align: center;
+            padding: var(--spacing-lg);
+        }
+
+        .record-btn {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--neon-pink), var(--neon-purple));
+            border: 4px solid var(--neon-blue);
+            color: #ffffff;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+            position: relative;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .record-btn:hover {
+            box-shadow:
+                0 0 50px rgba(255, 0, 255, 0.8),
+                inset 0 0 50px rgba(255, 0, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        .record-btn.recording {
+            background: linear-gradient(135deg, #ff0055, #ff0080);
+            animation: recordingPulse 1.5s infinite;
+        }
+
+        @keyframes recordingPulse {
+            0%, 100% {
+                box-shadow:
+                    0 0 20px rgba(255, 0, 85, 0.6),
+                    0 0 40px rgba(255, 0, 128, 0.4);
+            }
+            50% {
+                box-shadow:
+                    0 0 40px rgba(255, 0, 85, 0.8),
+                    0 0 80px rgba(255, 0, 128, 0.6);
+            }
+        }
+
+        .timer {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--neon-green);
+            margin: var(--spacing-lg) 0;
+            text-shadow:
+                0 0 20px rgba(0, 255, 136, 0.8),
+                0 0 40px rgba(0, 255, 136, 0.4);
+        }
+
+        /* 文件信息 */
+        .file-info {
+            background: rgba(0, 255, 136, 0.1);
+            border: 2px solid var(--neon-green);
+            border-radius: var(--radius-sm);
+            padding: var(--spacing-md);
+            margin-top: var(--spacing-md);
+            color: var(--neon-green);
+            font-size: 0.9rem;
+        }
+
+        /* 音频预览 */
+        .audio-preview {
+            margin-top: var(--spacing-md);
+        }
+
+        .audio-preview audio {
+            width: 100%;
+            height: 40px;
+            filter: invert(1) hue-rotate(180deg);
+        }
+
+        /* 加载状态 */
+        .loading {
+            text-align: center;
+            padding: var(--spacing-xl);
+            display: none;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid var(--glass-border);
+            border-top-color: var(--neon-blue);
+            border-radius: 50%;
+            margin: 0 auto var(--spacing-md);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading p {
+            color: var(--neon-blue);
+            font-size: 1.1rem;
+            animation: blink 1.5s infinite;
+        }
+
+        /* 进度条样式 */
+        .progress-container {
+            margin-top: var(--spacing-md);
+            padding: var(--spacing-md);
+            background: rgba(0, 243, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: var(--spacing-sm);
+            font-size: 0.9rem;
+            color: var(--neon-blue);
+        }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+        }
+
+        .progress-chunks {
+            margin-top: var(--spacing-xs);
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.6);
+            text-align: center;
+        }
+
+        /* 分块标记样式 */
+        .chunk-marker {
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-sm);
+            background: rgba(0, 243, 255, 0.05);
+            border-left: 3px solid var(--neon-blue);
+            border-radius: var(--radius-sm);
+            animation: slideInLeft 0.3s ease-out;
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .chunk-number {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(0, 243, 255, 0.2);
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--neon-blue);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .chunk-text {
+            display: block;
+            color: #ffffff;
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-top: var(--spacing-xs);
+        }
+
+        @keyframes blink {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* 结果区域 */
+        .result-area {
+            background: rgba(0, 255, 136, 0.05);
+            border: 2px solid var(--neon-green);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            margin-top: var(--spacing-lg);
+            display: none;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-area.active {
+            display: block;
+        }
+
+        .result-area h3 {
+            color: var(--neon-green);
+            font-size: 1.3rem;
+            margin-bottom: var(--spacing-md);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .result-text {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: var(--spacing-md);
+            color: #ffffff;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            min-height: 100px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        /* 错误消息 */
+        .error {
+            background: rgba(255, 0, 85, 0.1);
+            border: 2px solid #ff0055;
+            border-radius: var(--radius-sm);
+            padding: var(--spacing-md);
+            margin-top: var(--spacing-md);
+            color: #ff5580;
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            25% {
+                transform: translateX(-10px);
+            }
+            75% {
+                transform: translateX(10px);
+            }
+        }
+
+        /* 状态徽章 */
+        .status-badge {
+            display: inline-block;
+            padding: var(--spacing-xs) var(--spacing-md);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: var(--spacing-sm);
+        }
+
+        .status-badge.success {
+            background: rgba(0, 255, 136, 0.2);
+            color: var(--neon-green);
+            border: 1px solid var(--neon-green);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
+        }
+
+        .status-badge.error {
+            background: rgba(255, 0, 85, 0.2);
+            color: #ff5580;
+            border: 1px solid #ff0055;
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.4);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                padding: var(--spacing-md);
+            }
+
+            .header h1 {
+                letter-spacing: 2px;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .tab {
+                width: 100%;
+            }
+
+            .glass-card {
+                padding: var(--spacing-md);
+            }
+
+            .record-btn {
+                width: 120px;
+                height: 120px;
+                font-size: 1rem;
+            }
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--darker-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, var(--neon-pink), var(--neon-purple));
+        }
+
+        /* 选择文本样式 */
+        ::selection {
+            background: rgba(0, 243, 255, 0.3);
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <!-- 动态粒子背景 -->
+    <canvas id="particleCanvas"></canvas>
+
+    <!-- CRT 扫描线效果 -->
+    <div class="scanlines"></div>
+
+    <!-- 主容器 -->
+    <div class="container">
+        <!-- 头部 -->
+        <header class="header">
+            <h1>GLM-ASR</h1>
+            <p class="header-subtitle">语音识别终端 // v0.0.1</p>
+        </header>
+
+        <!-- 主内容卡片 -->
+        <div class="glass-card">
+            <!-- 标签导航 -->
+            <div class="tabs">
+                <button class="tab active" data-tab="upload">
+                    <span>📁 文件上传</span>
+                </button>
+                <button class="tab" data-tab="url">
+                    <span>🔗 URL 链接</span>
+                </button>
+                <button class="tab" data-tab="record">
+                    <span>🎙️ 实时录音</span>
+                </button>
+            </div>
+
+            <!-- 文件上传标签页 -->
+            <div class="tab-content active" id="upload">
+                <div class="upload-area" id="uploadArea">
+                    <span class="upload-icon">📤</span>
+                    <h3>点击或拖拽音频文件到此处</h3>
+                    <p>支持格式: WAV, MP3, FLAC, OGG, M4A</p>
+                    <input type="file" id="fileInput" accept="audio/*" style="display: none;">
+                </div>
+
+                <div id="fileInfo"></div>
+                <div id="audioPreview" class="audio-preview"></div>
+
+                <div style="text-align: center; margin-top: var(--spacing-lg);">
+                    <button class="btn" id="uploadBtn" disabled>
+                        <span>启动识别序列</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- URL 输入标签页 -->
+            <div class="tab-content" id="url">
+                <div class="input-group">
+                    <label for="urlInput">音频 URL 地址</label>
+                    <input type="url" id="urlInput" placeholder="https://example.com/audio.wav">
+                </div>
+
+                <!-- 示例音频区域 -->
+                <div class="input-group">
+                    <label>🎵 示例音频 (点击使用)</label>
+                    <div class="example-audios">
+                        <div class="example-audio-item" data-url="/static/examples/example_zh.wav">
+                            <span class="audio-tag">🇨🇳 中文-普通话</span>
+                            <span class="audio-name">example_zh.wav</span>
+                        </div>
+                        <div class="example-audio-item" data-url="/static/examples/example_en.wav">
+                            <span class="audio-tag">🇺🇸 英文</span>
+                            <span class="audio-name">example_en.wav</span>
+                        </div>
+                        <div class="example-audio-item" data-url="/static/examples/example_tw.mp3">
+                            <span class="audio-tag">🇹🇼 中文-台湾话</span>
+                            <span class="audio-name">example_tw.mp3</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- URL音频预览区域 -->
+                <div id="urlAudioPreview" class="audio-preview"></div>
+
+                <div style="text-align: center; margin-top: var(--spacing-lg);">
+                    <button class="btn" id="urlBtn">
+                        <span>从 URL 获取并识别</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 录音标签页 -->
+            <div class="tab-content" id="record">
+                <div class="record-controls">
+                    <button class="record-btn" id="recordBtn">
+                        🎙️
+                    </button>
+
+                    <div class="timer" id="timer">00:00</div>
+
+                    <div style="display: flex; gap: var(--spacing-md); justify-content: center; margin-top: var(--spacing-lg);">
+                        <button class="btn" id="stopRecordingBtn" disabled>
+                            <span>⏹ 停止</span>
+                        </button>
+                        <button class="btn btn-danger" id="cancelRecordingBtn" disabled>
+                            <span>✖ 取消</span>
+                        </button>
+                    </div>
+
+                    <div id="recordingPreview" class="audio-preview"></div>
+
+                    <div style="margin-top: var(--spacing-lg);">
+                        <button class="btn" id="sendRecordingBtn" disabled>
+                            <span>🚀 发送录音识别</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 加载状态 -->
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p id="loadingMessage">⚡ 正在分析音频信号...</p>
+                <div id="progressContainer"></div>
+            </div>
+
+            <!-- 识别结果 -->
+            <div class="result-area" id="resultArea">
+                <h3>🎯 识别结果</h3>
+                <div class="result-text" id="resultText"></div>
+                <div id="resultStatus"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 配置 ====================
+        const CONFIG = {
+            API_BASE_URL: '/api/v1',  // 使用相对路径，自动适配服务器地址
+            PARTICLE_COUNT: 80,
+            PARTICLE_SPEED: 0.5,
+            CONNECTION_DISTANCE: 150
+        };
+
+        // ==================== 全局变量 ====================
+        let selectedFile = null;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let recordingTimer = null;
+        let recordingSeconds = 0;
+        let recordedBlob = null;
+        let audioContext = null;
+
+        // ==================== DOM 元素 ====================
+        const elements = {
+            tabs: document.querySelectorAll('.tab'),
+            tabContents: document.querySelectorAll('.tab-content'),
+            uploadArea: document.getElementById('uploadArea'),
+            fileInput: document.getElementById('fileInput'),
+            fileInfo: document.getElementById('fileInfo'),
+            audioPreview: document.getElementById('audioPreview'),
+            uploadBtn: document.getElementById('uploadBtn'),
+            urlInput: document.getElementById('urlInput'),
+            urlBtn: document.getElementById('urlBtn'),
+            urlAudioPreview: document.getElementById('urlAudioPreview'),
+            recordBtn: document.getElementById('recordBtn'),
+            stopRecordingBtn: document.getElementById('stopRecordingBtn'),
+            cancelRecordingBtn: document.getElementById('cancelRecordingBtn'),
+            sendRecordingBtn: document.getElementById('sendRecordingBtn'),
+            timer: document.getElementById('timer'),
+            recordingPreview: document.getElementById('recordingPreview'),
+            loading: document.getElementById('loading'),
+            resultArea: document.getElementById('resultArea'),
+            resultText: document.getElementById('resultText'),
+            resultStatus: document.getElementById('resultStatus'),
+            particleCanvas: document.getElementById('particleCanvas')
+        };
+
+        // ==================== 粒子背景系统 ====================
+        class ParticleSystem {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.particles = [];
+                this.animationId = null;
+
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+
+                this.initParticles();
+                this.animate();
+            }
+
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+
+            initParticles() {
+                for (let i = 0; i < CONFIG.PARTICLE_COUNT; i++) {
+                    this.particles.push(this.createParticle());
+                }
+            }
+
+            createParticle() {
+                return {
+                    x: Math.random() * this.canvas.width,
+                    y: Math.random() * this.canvas.height,
+                    vx: (Math.random() - 0.5) * CONFIG.PARTICLE_SPEED,
+                    vy: (Math.random() - 0.5) * CONFIG.PARTICLE_SPEED,
+                    radius: Math.random() * 2 + 1,
+                    opacity: Math.random() * 0.5 + 0.2,
+                    pulseSpeed: Math.random() * 0.02 + 0.01,
+                    pulseOffset: Math.random() * Math.PI * 2
+                };
+            }
+
+            updateParticle(particle) {
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+
+                // 边界反弹
+                if (particle.x < 0 || particle.x > this.canvas.width) {
+                    particle.vx *= -1;
+                }
+                if (particle.y < 0 || particle.y > this.canvas.height) {
+                    particle.vy *= -1;
+                }
+
+                // 脉动效果
+                particle.pulseOffset += particle.pulseSpeed;
+            }
+
+            drawParticle(particle) {
+                const pulse = Math.sin(particle.pulseOffset) * 0.3 + 0.7;
+                const gradient = this.ctx.createRadialGradient(
+                    particle.x, particle.y, 0,
+                    particle.x, particle.y, particle.radius * 2
+                );
+                gradient.addColorStop(0, `rgba(0, 243, 255, ${particle.opacity * pulse})`);
+                gradient.addColorStop(1, 'rgba(0, 243, 255, 0)');
+
+                this.ctx.beginPath();
+                this.ctx.arc(particle.x, particle.y, particle.radius * 2, 0, Math.PI * 2);
+                this.ctx.fillStyle = gradient;
+                this.ctx.fill();
+            }
+
+            drawConnections() {
+                for (let i = 0; i < this.particles.length; i++) {
+                    for (let j = i + 1; j < this.particles.length; j++) {
+                        const dx = this.particles[i].x - this.particles[j].x;
+                        const dy = this.particles[i].y - this.particles[j].y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+
+                        if (distance < CONFIG.CONNECTION_DISTANCE) {
+                            const opacity = (1 - distance / CONFIG.CONNECTION_DISTANCE) * 0.15;
+                            this.ctx.beginPath();
+                            this.ctx.strokeStyle = `rgba(0, 243, 255, ${opacity})`;
+                            this.ctx.lineWidth = 1;
+                            this.ctx.moveTo(this.particles[i].x, this.particles[i].y);
+                            this.ctx.lineTo(this.particles[j].x, this.particles[j].y);
+                            this.ctx.stroke();
+                        }
+                    }
+                }
+            }
+
+            animate() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // 绘制粒子
+                this.particles.forEach(particle => {
+                    this.updateParticle(particle);
+                    this.drawParticle(particle);
+                });
+
+                // 绘制连线
+                this.drawConnections();
+
+                this.animationId = requestAnimationFrame(() => this.animate());
+            }
+        }
+
+        // ==================== 初始化 ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            // 启动粒子系统
+            new ParticleSystem(elements.particleCanvas);
+
+            // 检查 API 健康状态
+            checkAPIHealth();
+
+            // 绑定事件监听器
+            bindEventListeners();
+        });
+
+        // ==================== API 健康检查 ====================
+        async function checkAPIHealth() {
+            try {
+                const response = await fetch(`${CONFIG.API_BASE_URL.replace('/api/v1', '')}/health`);
+                const health = await response.json();
+
+                if (health.status !== 'healthy') {
+                    showError('⚠️ API 服务未就绪');
+                }
+            } catch (error) {
+                showError('⚠️ 无法连接到 API 服务');
+            }
+        }
+
+        // ==================== 事件绑定 ====================
+        function bindEventListeners() {
+            // 标签切换
+            elements.tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.dataset.tab;
+
+                    elements.tabs.forEach(t => t.classList.remove('active'));
+                    elements.tabContents.forEach(c => c.classList.remove('active'));
+
+                    tab.classList.add('active');
+                    document.getElementById(tabName).classList.add('active');
+                });
+            });
+
+            // 文件上传
+            elements.uploadArea.addEventListener('click', () => elements.fileInput.click());
+
+            elements.uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                elements.uploadArea.classList.add('dragover');
+            });
+
+            elements.uploadArea.addEventListener('dragleave', () => {
+                elements.uploadArea.classList.remove('dragover');
+            });
+
+            elements.uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                elements.uploadArea.classList.remove('dragover');
+
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFileSelect(files[0]);
+                }
+            });
+
+            elements.fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleFileSelect(e.target.files[0]);
+                }
+            });
+
+            elements.uploadBtn.addEventListener('click', () => {
+                if (!selectedFile) return;
+
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+
+                // 使用流式 API
+                sendStreamRequest('/transcribe-stream', formData);
+            });
+
+            // 示例音频点击事件
+            document.querySelectorAll('.example-audio-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const url = item.dataset.url;
+
+                    // 填充 URL 输入框
+                    elements.urlInput.value = url;
+
+                    // 添加视觉反馈
+                    item.style.background = 'rgba(0, 255, 136, 0.2)';
+                    setTimeout(() => {
+                        item.style.background = '';
+                    }, 300);
+                });
+            });
+
+            // URL 输入
+            elements.urlBtn.addEventListener('click', async () => {
+                const url = elements.urlInput.value.trim();
+                if (!url) {
+                    showError('请输入音频 URL');
+                    return;
+                }
+
+                try {
+                    showLoading(true, '正在从 URL 获取音频...');
+
+                    const response = await fetch(url);
+                    const blob = await response.blob();
+                    const file = new File([blob], 'audio-from-url.wav', { type: blob.type });
+
+                    // 显示音频预览播放器
+                    const audioUrl = URL.createObjectURL(blob);
+                    elements.urlAudioPreview.innerHTML = `
+                        <div class="file-info">
+                            <strong>已获取 URL 音频</strong><br>
+                            <strong>大小:</strong> ${(blob.size / (1024 * 1024)).toFixed(2)} MB<br>
+                            <strong>类型:</strong> ${blob.type || 'audio/*'}
+                        </div>
+                        <audio controls src="${audioUrl}" style="margin-top: 12px; width: 100%;"></audio>
+                    `;
+
+                    showLoading(false);
+
+                    // 自动开始识别
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    // 使用流式 API
+                    await sendStreamRequest('/transcribe-stream', formData);
+                } catch (error) {
+                    showError('无法从 URL 获取音频: ' + error.message);
+                    showLoading(false);
+                }
+            });
+
+            // 录音
+            elements.recordBtn.addEventListener('click', startRecording);
+            elements.stopRecordingBtn.addEventListener('click', stopRecording);
+            elements.cancelRecordingBtn.addEventListener('click', cancelRecording);
+            elements.sendRecordingBtn.addEventListener('click', sendRecording);
+        }
+
+        // ==================== 文件处理 ====================
+        function handleFileSelect(file) {
+            selectedFile = file;
+
+            const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            elements.fileInfo.innerHTML = `
+                <div class="file-info">
+                    <strong>已选择:</strong> ${file.name}<br>
+                    <strong>大小:</strong> ${sizeMB} MB<br>
+                    <strong>类型:</strong> ${file.type || 'audio/*'}
+                </div>
+            `;
+
+            // 音频预览
+            const url = URL.createObjectURL(file);
+            elements.audioPreview.innerHTML = `
+                <audio controls src="${url}"></audio>
+            `;
+
+            elements.uploadBtn.disabled = false;
+        }
+
+        // ==================== 录音功能 ====================
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+                mediaRecorder = new MediaRecorder(stream);
+                recordedChunks = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        recordedChunks.push(event.data);
+                    }
+                };
+
+                mediaRecorder.onstop = () => {
+                    recordedBlob = new Blob(recordedChunks, { type: 'audio/webm' });
+
+                    const url = URL.createObjectURL(recordedBlob);
+                    elements.recordingPreview.innerHTML = `
+                        <audio controls src="${url}"></audio>
+                    `;
+
+                    elements.sendRecordingBtn.disabled = false;
+                };
+
+                mediaRecorder.start();
+                elements.recordBtn.classList.add('recording');
+                elements.recordBtn.textContent = '🔴';
+                elements.stopRecordingBtn.disabled = false;
+                elements.cancelRecordingBtn.disabled = false;
+                elements.recordBtn.disabled = true;
+
+                // 开始计时
+                recordingSeconds = 0;
+                updateTimerDisplay();
+                recordingTimer = setInterval(() => {
+                    recordingSeconds++;
+                    updateTimerDisplay();
+                }, 1000);
+
+            } catch (error) {
+                showError('无法访问麦克风: ' + error.message);
+            }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+
+                clearInterval(recordingTimer);
+                elements.recordBtn.classList.remove('recording');
+                elements.recordBtn.textContent = '🎙️';
+                elements.stopRecordingBtn.disabled = true;
+                elements.cancelRecordingBtn.disabled = true;
+                elements.recordBtn.disabled = false;
+            }
+        }
+
+        function cancelRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+
+            clearInterval(recordingTimer);
+            elements.recordBtn.classList.remove('recording');
+            elements.recordBtn.textContent = '🎙️';
+            elements.stopRecordingBtn.disabled = true;
+            elements.cancelRecordingBtn.disabled = true;
+            elements.recordBtn.disabled = false;
+
+            recordedChunks = [];
+            recordedBlob = null;
+            elements.recordingPreview.innerHTML = '';
+            elements.sendRecordingBtn.disabled = true;
+            recordingSeconds = 0;
+            elements.timer.textContent = '00:00';
+        }
+
+        function sendRecording() {
+            if (!recordedBlob) return;
+
+            const file = new File([recordedBlob], 'recording.webm', { type: 'audio/webm' });
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // 使用流式 API
+            sendStreamRequest('/transcribe-stream', formData);
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(recordingSeconds / 60);
+            const seconds = recordingSeconds % 60;
+            elements.timer.textContent =
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // ==================== API 请求 ====================
+        async function sendRequest(endpoint, data) {
+            showLoading(true);
+            hideError();
+
+            try {
+                const response = await fetch(`${CONFIG.API_BASE_URL}${endpoint}`, {
+                    method: 'POST',
+                    body: data
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showResult(result.text, result.duration);
+                } else {
+                    showError(result.error || '识别失败');
+                }
+            } catch (error) {
+                showError('请求失败: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // ==================== 流式 API 请求 ====================
+        async function sendStreamRequest(endpoint, data) {
+            hideError();
+            showLoading(true, '正在处理音频...');
+
+            // 显示进度条容器
+            const progressContainer = document.getElementById('progressContainer');
+            if (progressContainer) {
+                progressContainer.innerHTML = '';
+            }
+
+            // 创建进度条
+            const progressBar = createProgressBar();
+            if (progressContainer) {
+                progressContainer.appendChild(progressBar);
+            }
+
+            const resultChunks = [];
+            let totalChunks = 0;
+            let receivedChunks = 0;
+
+            try {
+                const response = await fetch(`${CONFIG.API_BASE_URL}${endpoint}`, {
+                    method: 'POST',
+                    body: data
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (!line.trim()) continue;
+
+                        try {
+                            const data = JSON.parse(line);
+
+                            switch (data.type) {
+                                case 'info':
+                                    updateLoadingMessage(data.message);
+                                    if (data.duration) {
+                                        progressBar.querySelector('.progress-duration').textContent =
+                                            `总时长: ${data.duration.toFixed(2)}s`;
+                                    }
+                                    break;
+
+                                case 'chunk':
+                                    receivedChunks++;
+                                    totalChunks = data.total_chunks;
+                                    resultChunks.push({
+                                        index: data.chunk_index,
+                                        text: data.text
+                                    });
+
+                                    // 更新进度条
+                                    updateProgressBar(progressBar, data.progress, data.chunk_index, data.total_chunks);
+
+                                    // 实时显示当前分块结果
+                                    appendStreamResult(data.text, data.chunk_index, data.total_chunks);
+                                    break;
+
+                                case 'error':
+                                    showError(`分块 ${data.chunk_index + 1} 转录失败: ${data.error}`);
+                                    break;
+
+                                case 'complete':
+                                    // 显示完整结果
+                                    showFinalResult(resultChunks.map(r => r.text).join(' '));
+                                    break;
+                            }
+                        } catch (parseError) {
+                            console.error('解析响应失败:', line, parseError);
+                        }
+                    }
+                }
+
+            } catch (error) {
+                showError('流式请求失败: ' + error.message);
+            } finally {
+                showLoading(false);
+                // 移除进度条
+                if (progressBar && progressBar.parentNode) {
+                    setTimeout(() => {
+                        progressBar.remove();
+                    }, 2000);
+                }
+            }
+        }
+
+        function createProgressBar() {
+            const container = document.createElement('div');
+            container.className = 'progress-container';
+            container.innerHTML = `
+                <div class="progress-info">
+                    <span class="progress-status">准备中...</span>
+                    <span class="progress-duration"></span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" style="width: 0%"></div>
+                </div>
+                <div class="progress-chunks"></div>
+            `;
+            return container;
+        }
+
+        function updateProgressBar(progressBar, progress, currentChunk, totalChunks) {
+            const fill = progressBar.querySelector('.progress-bar-fill');
+            const status = progressBar.querySelector('.progress-status');
+            const chunks = progressBar.querySelector('.progress-chunks');
+
+            fill.style.width = `${progress}%`;
+            status.textContent = `正在处理: ${currentChunk + 1}/${totalChunks}`;
+            chunks.textContent = `已完成 ${currentChunk + 1}/${totalChunks} 个分块`;
+        }
+
+        function appendStreamResult(text, chunkIndex, totalChunks) {
+            // 清空之前的结果显示
+            elements.resultArea.classList.add('active');
+            elements.resultText.innerHTML = '';
+
+            // 添加分块标记
+            const chunkMarker = document.createElement('div');
+            chunkMarker.className = 'chunk-marker';
+            chunkMarker.innerHTML = `
+                <span class="chunk-number">📦 分块 ${chunkIndex + 1}/${totalChunks}</span>
+                <span class="chunk-text">${text}</span>
+            `;
+            elements.resultText.appendChild(chunkMarker);
+
+            // 滚动到底部
+            elements.resultText.scrollTop = elements.resultText.scrollHeight;
+        }
+
+        function showFinalResult(fullText) {
+            elements.resultText.innerHTML = fullText;
+            elements.resultArea.classList.add('active');
+
+            elements.resultStatus.innerHTML = `
+                <span class="status-badge success">
+                    ✅ 识别完成
+                </span>
+            `;
+        }
+
+        // ==================== UI 更新 ====================
+        function showResult(text, duration) {
+            elements.resultText.textContent = text || '(空结果)';
+            elements.resultArea.classList.add('active');
+
+            elements.resultStatus.innerHTML = `
+                <span class="status-badge success">
+                    ✅ 识别成功${duration ? ` | 时长: ${duration.toFixed(2)}s` : ''}
+                </span>
+            `;
+
+            elements.resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = message;
+
+            const oldError = document.querySelector('.error');
+            if (oldError) {
+                oldError.remove();
+            }
+
+            document.querySelector('.glass-card').appendChild(errorDiv);
+
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        }
+
+        function hideError() {
+            const error = document.querySelector('.error');
+            if (error) {
+                error.remove();
+            }
+        }
+
+        function showLoading(show, message = '⚡ 正在分析音频信号...') {
+            const loadingMsg = document.getElementById('loadingMessage');
+            if (loadingMsg) {
+                loadingMsg.textContent = message;
+            }
+
+            if (show) {
+                elements.loading.classList.add('active');
+                elements.resultArea.classList.remove('active');
+            } else {
+                elements.loading.classList.remove('active');
+            }
+        }
+
+        function updateLoadingMessage(message) {
+            const loadingMsg = document.getElementById('loadingMessage');
+            if (loadingMsg) {
+                loadingMsg.textContent = message;
+            }
+        }
+    </script>
+</body>
+</html>
