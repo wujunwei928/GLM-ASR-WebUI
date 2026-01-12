@@ -12,23 +12,11 @@
 
 ### 🎁 智谱 GLM Coding 超值订阅，邀你一起"薅羊毛"！
 
-**Claude Code、Cline 等 20+ 大编程工具无缝支持，"码力"全开，越拼越爽！**
+**本项目全程使用GLM进行开发, 绝对性能够用, 又量大管饱.**
 
 [立即开拼，享限时惊喜价, 首购低至4折！](https://www.bigmodel.cn/glm-coding?ic=KUS7WQB5UI)
 
 <img src="resources/BigmodelPoster.png" alt="拼好模活动海报" width="300">
-
----
-
-### 🧋 限时超值福利：订阅20元，送18元沪上阿姨奶茶！
-
-> **活动时间**：2025年12月26日 - 2026年1月9日
-
-> **领取条件**：订阅任意 GLM Coding Plan 套餐
-
-> **💡 小贴士**：20元套餐相当于用2元享受GLM-4.7旗舰模型一个月，还能免费喝一杯奶茶，**史上最划算！**
-
-[📖 查看详细领取教程](https://docs.bigmodel.cn/cn/coding-plan/benefits/milk-tea)
 
 ---
 
