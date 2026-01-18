@@ -82,6 +82,27 @@ source .venv/bin/activate  # Linux/macOS
 ```
 
 3. **安装依赖:**
+
+#### 方式 1：使用 uv（推荐）
+
+[uv](https://github.com/astral-sh/uv) 是一个快速的 Python 包管理器。
+
+**安装 uv:**
+```bash
+pip install uv
+```
+
+**安装依赖:**
+```bash
+# 安装所有依赖
+uv sync
+
+# 仅安装生产依赖
+uv sync --no-dev
+```
+
+#### 方式 2：使用 pip（传统方式）
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -90,14 +111,22 @@ pip install -r requirements.txt
 
 ### 启动服务器
 
-**开发模式（自动重载）:**
+**使用 uv（推荐）:**
 ```bash
-uvicorn app:app --reload --host 0.0.0.0 --port 8000
+# 方式 1: 使用 uv run
+uv run uvicorn glm_asr.app:app --reload
+
+# 方式 2: 使用 Python 模块
+uv run python -m glm_asr.app
 ```
 
-**生产模式:**
+**使用 pip/uvicorn:**
 ```bash
-uvicorn app:app --host 0.0.0.0 --port 8000 --workers 4
+# 开发模式（自动重载）
+uvicorn glm_asr.app:app --reload --host 0.0.0.0 --port 8000
+
+# 生产模式
+uvicorn glm_asr.app:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
 Web 界面将可通过 `http://localhost:8000` 访问
