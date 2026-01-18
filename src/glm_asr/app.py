@@ -29,6 +29,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# 获取项目根目录（src/glm_asr 的父目录的父目录）
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+
 # 全局变量
 app = FastAPI(
     title="GLM-ASR 语音识别服务",
@@ -36,11 +39,11 @@ app = FastAPI(
     version="0.0.1"
 )
 
-# 配置 Jinja2 模板
-templates = Jinja2Templates(directory="templates")
+# 配置 Jinja2 模板 - 更新路径指向项目根目录的 templates
+templates = Jinja2Templates(directory=str(PROJECT_ROOT / "templates"))
 
 # 配置静态文件 - 支持 static 目录下的示例音频文件
-static_dir = Path(__file__).parent / "static"
+static_dir = PROJECT_ROOT / "static"
 if static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
     logger.info(f"✅ 静态文件目录已挂载: {static_dir}")
@@ -611,7 +614,7 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(
-        "app:app",
+        "glm_asr.app:app",
         host="0.0.0.0",
         port=8000,
         reload=False,

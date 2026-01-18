@@ -1,0 +1,50 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/glm_asr"]
+exclude = [
+    "*/__pycache__",
+    "*.pyc",
+]
+
+[project]
+name = "glm-asr-webui"
+version = "0.0.1"
+description = "基于 GLM-ASR-Nano-2512 的语音识别 Web 服务"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "wujunwei" }
+]
+
+dependencies = [
+    "torch>=2.9.1",
+    "torchaudio>=2.9.1",
+    "torchcodec>=0.9.0",
+    "transformers @ git+https://github.com/huggingface/transformers.git",
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.23.0",
+    "jinja2>=3.1.2",
+    "python-multipart>=0.0.6",
+    "aiofiles>=23.0.0",
+    "ffmpeg-python>=0.2.0",
+    "accelerate>=0.20.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=6.0.0",
+    "pytest-asyncio>=0.24.0",
+    "ruff>=0.8.0",
+    "pre-commit>=4.0.0",
+]
+
+[project.scripts]
+glm-asr = "glm_asr:app"
