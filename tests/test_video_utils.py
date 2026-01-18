@@ -6,6 +6,7 @@ from glm_asr.utils.video import (
     extract_audio_from_video,
     is_video_file,
     get_video_extension,
+    download_video,
     SUPPORTED_VIDEO_FORMATS
 )
 
@@ -65,3 +66,17 @@ class TestExtractAudioFromVideo:
         # 注意：这个测试需要一个真实的测试视频文件
         # 实际测试时需要准备一个小的测试视频
         pass
+
+
+class TestDownloadVideo:
+    """测试 download_video 函数"""
+
+    def test_raises_error_for_invalid_url(self):
+        """无效 URL 应抛出异常"""
+        with pytest.raises(RuntimeError, match="下载失败"):
+            download_video("not-a-valid-url")
+
+    def test_raises_error_for_timeout(self):
+        """超时应抛出异常"""
+        with pytest.raises(RuntimeError, match="下载超时"):
+            download_video("http://10.255.255.1/test.mp4", timeout=1)

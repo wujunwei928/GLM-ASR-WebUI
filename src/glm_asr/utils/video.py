@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 
 import ffmpeg
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -60,3 +61,56 @@ def is_video_file(content_type: str) -> bool:
 def get_video_extension(filename: str) -> str:
     """获取视频文件扩展名"""
     return filename.split('.')[-1].lower() if '.' in filename else ''
+
+
+def download_video(url: str, timeout: int = DOWNLOAD_TIMEOUT) -> Path:
+    """
+    下载在线视频到临时目录
+
+    参数:
+        url: 视频 URL
+        timeout: 下载超时时间（秒）
+
+    返回:
+        下载的视频文件路径
+
+    异常:
+        RuntimeError: 下载失败
+    """
+    temp_dir = Path("/tmp/glm_asr_videos")
+    temp_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        # 从 URL 生成文件名
+        filename = url.split('/')[-1][:50]
+        if '.' not in filename or filename.split('.')[-1] not in SUPPORTED_VIDEO_FORMATS:
+            filename = f"video_{hash(url) & 0x7FFFFFFF}.mp4"
+
+        video_path = temp_dir / filename
+
+        logger.info(f"开始下载视频: {url} -> {video_path}")
+
+        response = requests.get(url, stream=True, timeout=timeout)
+        response.raise_for_status()
+
+        # 检查文件大小
+        content_length = response.headers.get('content-length')
+        if content_length:
+            size_mb = int(content_length) / (1024 * 1024)
+            if size_mb > MAX_VIDEO_SIZE_MB:
+                raise RuntimeError(f"视频文件过大: {size_mb:.1f}MB (最大 {MAX_VIDEO_SIZE_MB}MB)")
+
+        # 下载文件
+        with video_path.open('wb') as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                f.write(chunk)
+
+        logger.info(f"✅ 视频下载成功: {video_path} ({video_path.stat().st_size / 1024 / 1024:.1f}MB)")
+        return video_path
+
+    except requests.Timeout:
+        raise RuntimeError(f"下载超时（>{timeout}秒）")
+    except requests.RequestException as e:
+        raise RuntimeError(f"下载失败: {str(e)}")
+    except Exception as e:
+        raise RuntimeError(f"视频处理失败: {str(e)}") from e

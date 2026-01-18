@@ -388,6 +388,122 @@ async def transcribe_audio(file: UploadFile = File(..., description="音频文�
                 logger.warning(f"删除临时文件失败: {str(e)}")
 
 
+@app.post("/api/v1/transcribe-url")
+async def transcribe_from_url(
+    url: str = Form(..., description="音频或视频 URL"),
+    chunk_duration: int = Form(30, description="分块时长(秒,默认 30)"),
+):
+    """
+    通过 URL 转录音频/视频
+
+    参数:
+    - url: 音频或视频文件 URL
+    - chunk_duration: 分块时长(秒,默认 30)
+
+    返回:
+    - 流式 JSON 响应
+    """
+    from glm_asr.utils.video import download_video
+    import mimetypes
+
+    temp_file = None
+    chunk_files = []
+
+    async def generate_transcription() -> AsyncGenerator[str, None]:
+        nonlocal temp_file, chunk_files
+
+        try:
+            # 加载模型
+            model, processor = load_model()
+
+            # 下载文件
+            yield json.dumps({
+                "type": "info",
+                "message": f"正在下载: {url}",
+            }, ensure_ascii=False) + "\n"
+
+            temp_file = download_video(url)
+
+            # 判断是否为视频
+            content_type, _ = mimetypes.guess_type(str(temp_file))
+            is_video = content_type and content_type.startswith('video/')
+
+            if is_video:
+                yield json.dumps({
+                    "type": "info",
+                    "message": "检测到视频文件，正在提取音频...",
+                }, ensure_ascii=False) + "\n"
+
+                video_file = temp_file
+                temp_file = extract_audio_from_video(video_file)
+                video_file.unlink()
+
+            # 获取时长
+            duration = get_audio_duration_ffmpeg(temp_file)
+            if duration:
+                yield json.dumps({
+                    "type": "info",
+                    "message": f"音频时长: {duration:.2f} 秒",
+                    "duration": duration,
+                }, ensure_ascii=False) + "\n"
+
+            # 分割并转录
+            chunk_files = split_audio(temp_file, chunk_duration)
+            full_text = []
+
+            for i, chunk_file in enumerate(chunk_files):
+                result = await asyncio.to_thread(
+                    transcribe_chunk, model, processor, chunk_file, i, len(chunk_files), DEVICE
+                )
+
+                if result["success"]:
+                    full_text.append(result["text"])
+                    yield json.dumps({
+                        "type": "chunk",
+                        "chunk_index": result["chunk_index"],
+                        "total_chunks": result["total_chunks"],
+                        "text": result["text"],
+                        "progress": (result["chunk_index"] + 1) / result["total_chunks"] * 100,
+                    }, ensure_ascii=False) + "\n"
+                else:
+                    yield json.dumps({
+                        "type": "error",
+                        "chunk_index": result["chunk_index"],
+                        "total_chunks": result["total_chunks"],
+                        "error": result.get("error", "转录失败"),
+                    }, ensure_ascii=False) + "\n"
+
+            yield json.dumps({
+                "type": "complete",
+                "text": " ".join(full_text),
+                "total_chunks": len(chunk_files),
+            }, ensure_ascii=False) + "\n"
+
+        except Exception as e:
+            logger.error(f"URL 转录失败: {str(e)}", exc_info=True)
+            yield json.dumps({
+                "type": "error",
+                "error": str(e)
+            }, ensure_ascii=False) + "\n"
+
+        finally:
+            # 清理临时文件
+            for chunk_file in chunk_files:
+                try:
+                    if chunk_file.exists():
+                        chunk_file.unlink()
+                except Exception:
+                    pass
+
+            if temp_file and temp_file.exists():
+                try:
+                    temp_file.unlink()
+                except Exception:
+                    pass
+
+    return StreamingResponse(generate_transcription(), media_type="application/x-ndjson")
+
+
 @app.get("/api/v1/model/info")
 async def model_info():
     """获取模型信息"""
