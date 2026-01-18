@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["app.py", "templates", "static", "resources"]
+packages = ["src/glm_asr"]
 exclude = [
     "*/__pycache__",
     "*.pyc",
