@@ -1,16 +1,15 @@
 """音频处理工具函数"""
+
 import logging
 from pathlib import Path
-from typing import List, Optional
 
-import torch
-import torchaudio
 import ffmpeg
+import torchaudio
 
 logger = logging.getLogger(__name__)
 
 
-def get_audio_duration(file_path: Path) -> Optional[float]:
+def get_audio_duration(file_path: Path) -> float | None:
     """获取音频文件时长(秒)"""
     try:
         waveform, sample_rate = torchaudio.load(str(file_path))
@@ -21,18 +20,18 @@ def get_audio_duration(file_path: Path) -> Optional[float]:
         return None
 
 
-def get_audio_duration_ffmpeg(file_path: Path) -> Optional[float]:
+def get_audio_duration_ffmpeg(file_path: Path) -> float | None:
     """使用 ffmpeg 获取音频文件时长(秒)"""
     try:
         probe = ffmpeg.probe(str(file_path))
-        duration = float(probe['format']['duration'])
+        duration = float(probe["format"]["duration"])
         return duration
     except Exception as e:
         logger.warning(f"FFmpeg 无法获取音频时长: {str(e)}")
         return None
 
 
-def split_audio(file_path: Path, chunk_duration: int = 30) -> List[Path]:
+def split_audio(file_path: Path, chunk_duration: int = 30) -> list[Path]:
     """
     使用 ffmpeg 分割音频文件
 
@@ -72,9 +71,8 @@ def split_audio(file_path: Path, chunk_duration: int = 30) -> List[Path]:
 
             # 使用 ffmpeg 分割音频
             (
-                ffmpeg
-                .input(str(file_path), ss=start_time, t=chunk_duration)
-                .output(str(output_file), acodec='pcm_s16le', ac=1, ar=16000)
+                ffmpeg.input(str(file_path), ss=start_time, t=chunk_duration)
+                .output(str(output_file), acodec="pcm_s16le", ac=1, ar=16000)
                 .overwrite_output()
                 .run(quiet=True, capture_stdout=True)
             )

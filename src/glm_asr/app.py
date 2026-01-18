@@ -5,28 +5,25 @@ GLM-ASR FastAPI 语音识别服务
 支持 Jinja2 模板渲染
 """
 
-import os
-import logging
 import asyncio
 import json
+import logging
+from collections.abc import AsyncGenerator
 from pathlib import Path
-from typing import AsyncGenerator
 
 import torch
-import ffmpeg
-from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Request
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, StreamingResponse
-from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
-from glm_asr.models import TranscriptionResponse, HealthResponse
-from glm_asr.services.asr import load_model, transcribe_chunk, DEVICE
-from glm_asr.utils.audio import split_audio, get_audio_duration, get_audio_duration_ffmpeg
+from glm_asr.models import HealthResponse, TranscriptionResponse
+from glm_asr.services.asr import DEVICE, load_model, transcribe_chunk
+from glm_asr.utils.audio import get_audio_duration, get_audio_duration_ffmpeg, split_audio
 
 # 配置日志
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -37,7 +34,7 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 app = FastAPI(
     title="GLM-ASR 语音识别服务",
     description="基于 GLM-ASR-Nano-2512 模型的音频转录 API",
-    version="0.0.1"
+    version="0.0.1",
 )
 
 # 配置 Jinja2 模板
@@ -84,8 +81,8 @@ async def root(request: Request):
             "request": request,
             "title": "GLM-ASR 语音识别服务",
             "version": "0.0.1",
-            "model_id": MODEL_ID
-        }
+            "model_id": MODEL_ID,
+        },
     )
 
 
@@ -98,11 +95,7 @@ async def api_info():
         "service": "GLM-ASR 语音识别服务",
         "version": "0.0.1",
         "model": MODEL_ID,
-        "endpoints": {
-            "health": "/health",
-            "transcribe": "/api/v1/transcribe",
-            "docs": "/docs"
-        }
+        "endpoints": {"health": "/health", "transcribe": "/api/v1/transcribe", "docs": "/docs"},
     }
 
 
@@ -116,14 +109,14 @@ async def health_check():
     return HealthResponse(
         status="healthy" if model_loaded else "initializing",
         model_loaded=model_loaded,
-        device=DEVICE
+        device=DEVICE,
     )
 
 
 @app.post("/api/v1/transcribe-stream")
 async def transcribe_audio_stream(
     file: UploadFile = File(..., description="音频文件(WAV, MP3 等格式)"),
-    chunk_duration: int = Form(30, description="分块时长(秒,默认 30)")
+    chunk_duration: int = Form(30, description="分块时长(秒,默认 30)"),
 ):
     """
     音频流式转录接口 - 支持长音频分割和流式返回
@@ -141,7 +134,7 @@ async def transcribe_audio_stream(
         logger.warning(f"不支持的文件类型: {file.content_type}")
         return StreamingResponse(
             _iter_json([{"error": f"不支持的文件类型: {file.content_type}"}]),
-            media_type="application/x-ndjson"
+            media_type="application/x-ndjson",
         )
 
     temp_file = None
@@ -149,7 +142,6 @@ async def transcribe_audio_stream(
 
     async def generate_transcription() -> AsyncGenerator[str, None]:
         nonlocal temp_file, chunk_files
-        from glm_asr.services.asr import _model, _processor
 
         try:
             # 加载模型
@@ -170,11 +162,17 @@ async def transcribe_audio_stream(
             duration = get_audio_duration_ffmpeg(temp_file)
             if duration:
                 logger.info(f"音频时长: {duration:.2f} 秒")
-                yield json.dumps({
-                    "type": "info",
-                    "message": f"音频时长: {duration:.2f} 秒",
-                    "duration": duration
-                }, ensure_ascii=False) + "\n"
+                yield (
+                    json.dumps(
+                        {
+                            "type": "info",
+                            "message": f"音频时长: {duration:.2f} 秒",
+                            "duration": duration,
+                        },
+                        ensure_ascii=False,
+                    )
+                    + "\n"
+                )
 
             # 分割音频
             chunk_files = split_audio(temp_file, chunk_duration)
@@ -184,51 +182,62 @@ async def transcribe_audio_stream(
             for i, chunk_file in enumerate(chunk_files):
                 # 在线程池中执行推理以避免阻塞
                 result = await asyncio.to_thread(
-                    transcribe_chunk,
-                    model,
-                    processor,
-                    chunk_file,
-                    i,
-                    len(chunk_files),
-                    DEVICE
+                    transcribe_chunk, model, processor, chunk_file, i, len(chunk_files), DEVICE
                 )
 
                 if result["success"]:
                     full_text.append(result["text"])
-                    yield json.dumps({
-                        "type": "chunk",
-                        "chunk_index": result["chunk_index"],
-                        "total_chunks": result["total_chunks"],
-                        "text": result["text"],
-                        "progress": (result["chunk_index"] + 1) / result["total_chunks"] * 100
-                    }, ensure_ascii=False) + "\n"
+                    yield (
+                        json.dumps(
+                            {
+                                "type": "chunk",
+                                "chunk_index": result["chunk_index"],
+                                "total_chunks": result["total_chunks"],
+                                "text": result["text"],
+                                "progress": (result["chunk_index"] + 1)
+                                / result["total_chunks"]
+                                * 100,
+                            },
+                            ensure_ascii=False,
+                        )
+                        + "\n"
+                    )
                 else:
-                    yield json.dumps({
-                        "type": "error",
-                        "chunk_index": result["chunk_index"],
-                        "total_chunks": result["total_chunks"],
-                        "error": result.get("error", "转录失败")
-                    }, ensure_ascii=False) + "\n"
+                    yield (
+                        json.dumps(
+                            {
+                                "type": "error",
+                                "chunk_index": result["chunk_index"],
+                                "total_chunks": result["total_chunks"],
+                                "error": result.get("error", "转录失败"),
+                            },
+                            ensure_ascii=False,
+                        )
+                        + "\n"
+                    )
 
             # 返回完整结果
-            yield json.dumps({
-                "type": "complete",
-                "text": " ".join(full_text),
-                "total_chunks": len(chunk_files)
-            }, ensure_ascii=False) + "\n"
+            yield (
+                json.dumps(
+                    {
+                        "type": "complete",
+                        "text": " ".join(full_text),
+                        "total_chunks": len(chunk_files),
+                    },
+                    ensure_ascii=False,
+                )
+                + "\n"
+            )
 
         except HTTPException as e:
-            yield json.dumps({
-                "type": "error",
-                "error": str(e.detail)
-            }, ensure_ascii=False) + "\n"
+            yield json.dumps({"type": "error", "error": str(e.detail)}, ensure_ascii=False) + "\n"
 
         except Exception as e:
             logger.error(f"流式转录失败: {str(e)}", exc_info=True)
-            yield json.dumps({
-                "type": "error",
-                "error": f"转录失败: {str(e)}"
-            }, ensure_ascii=False) + "\n"
+            yield (
+                json.dumps({"type": "error", "error": f"转录失败: {str(e)}"}, ensure_ascii=False)
+                + "\n"
+            )
 
         finally:
             # 清理临时文件
@@ -247,10 +256,7 @@ async def transcribe_audio_stream(
                 except Exception as e:
                     logger.warning(f"删除临时文件失败: {str(e)}")
 
-    return StreamingResponse(
-        generate_transcription(),
-        media_type="application/x-ndjson"
-    )
+    return StreamingResponse(generate_transcription(), media_type="application/x-ndjson")
 
 
 def _iter_json(data_list: list) -> AsyncGenerator[str, None]:
@@ -260,9 +266,7 @@ def _iter_json(data_list: list) -> AsyncGenerator[str, None]:
 
 
 @app.post("/api/v1/transcribe", response_model=TranscriptionResponse)
-async def transcribe_audio(
-    file: UploadFile = File(..., description="音频文件(WAV, MP3 等格式)")
-):
+async def transcribe_audio(file: UploadFile = File(..., description="音频文件(WAV, MP3 等格式)")):
     """
     音频转录接口
 
@@ -280,9 +284,7 @@ async def transcribe_audio(
     if not file.content_type.startswith("audio/"):
         logger.warning(f"不支持的文件类型: {file.content_type}")
         return TranscriptionResponse(
-            success=False,
-            text="",
-            error=f"不支持的文件类型: {file.content_type},请上传音频文件"
+            success=False, text="", error=f"不支持的文件类型: {file.content_type},请上传音频文件"
         )
 
     temp_file = None
@@ -290,7 +292,6 @@ async def transcribe_audio(
     try:
         # 加载模型
         model, processor = load_model()
-        from glm_asr.services.asr import MODEL_ID
 
         # 保存上传的文件到临时位置
         temp_dir = Path("/tmp/glm_asr_uploads")
@@ -316,10 +317,7 @@ async def transcribe_audio(
                         "type": "audio",
                         "url": str(temp_file),
                     },
-                    {
-                        "type": "text",
-                        "text": "Please transcribe this audio into text"
-                    },
+                    {"type": "text", "text": "Please transcribe this audio into text"},
                 ],
             }
         ]
@@ -330,7 +328,7 @@ async def transcribe_audio(
             tokenize=True,
             add_generation_prompt=True,
             return_dict=True,
-            return_tensors="pt"
+            return_tensors="pt",
         )
 
         # 移动到设备
@@ -339,25 +337,16 @@ async def transcribe_audio(
         # 执行推理
         logger.info("开始推理...")
         with torch.inference_mode():
-            outputs = model.generate(
-                **inputs,
-                max_new_tokens=256,
-                do_sample=False
-            )
+            outputs = model.generate(**inputs, max_new_tokens=256, do_sample=False)
 
         # 解码结果
         transcript = processor.batch_decode(
-            outputs[:, inputs.input_ids.shape[1]:],
-            skip_special_tokens=True
+            outputs[:, inputs.input_ids.shape[1] :], skip_special_tokens=True
         )[0].strip()
 
         logger.info(f"转录成功: {transcript[:50]}...")
 
-        return TranscriptionResponse(
-            success=True,
-            text=transcript,
-            duration=duration
-        )
+        return TranscriptionResponse(success=True, text=transcript, duration=duration)
 
     except HTTPException as e:
         # 重新抛出 HTTP 异常
@@ -365,11 +354,7 @@ async def transcribe_audio(
 
     except Exception as e:
         logger.error(f"转录失败: {str(e)}", exc_info=True)
-        return TranscriptionResponse(
-            success=False,
-            text="",
-            error=f"转录失败: {str(e)}"
-        )
+        return TranscriptionResponse(success=False, text="", error=f"转录失败: {str(e)}")
 
     finally:
         # 清理临时文件
@@ -393,17 +378,11 @@ async def model_info():
         "device": DEVICE,
         "model_loaded": model_loaded,
         "dtype": "torch.bfloat16",
-        "supported_formats": ["wav", "mp3", "flac", "ogg", "m4a"]
+        "supported_formats": ["wav", "mp3", "flac", "ogg", "m4a"],
     }
 
 
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(
-        "glm_asr.app:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=False,
-        log_level="info"
-    )
+    uvicorn.run("glm_asr.app:app", host="0.0.0.0", port=8000, reload=False, log_level="info")

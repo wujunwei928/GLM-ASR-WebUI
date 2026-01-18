@@ -1,5 +1,4 @@
 """API 端点测试"""
-from glm_asr.models import HealthResponse
 
 
 def test_root(client):

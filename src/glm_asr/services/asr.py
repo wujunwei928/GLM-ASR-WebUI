@@ -1,7 +1,7 @@
 """ASR 服务模块"""
+
 import logging
 from pathlib import Path
-from typing import Optional
 
 import torch
 from transformers import AutoModel, AutoProcessor
@@ -35,11 +35,7 @@ def load_model():
 
         # 直接加载模型（库会自动处理缓存）
         _processor = AutoProcessor.from_pretrained(MODEL_ID)
-        _model = AutoModel.from_pretrained(
-            MODEL_ID,
-            dtype=torch.bfloat16,
-            device_map=DEVICE
-        )
+        _model = AutoModel.from_pretrained(MODEL_ID, dtype=torch.bfloat16, device_map=DEVICE)
 
         _model.eval()
 
@@ -55,12 +51,7 @@ def load_model():
 
 
 def transcribe_chunk(
-    model,
-    processor,
-    chunk_file: Path,
-    chunk_index: int,
-    total_chunks: int,
-    device: str
+    model, processor, chunk_file: Path, chunk_index: int, total_chunks: int, device: str
 ) -> dict:
     """
     转录单个音频分块 (同步函数，用于线程池执行)
@@ -80,10 +71,7 @@ def transcribe_chunk(
                         "type": "audio",
                         "url": str(chunk_file),
                     },
-                    {
-                        "type": "text",
-                        "text": "Please transcribe this audio into text"
-                    },
+                    {"type": "text", "text": "Please transcribe this audio into text"},
                 ],
             }
         ]
@@ -94,7 +82,7 @@ def transcribe_chunk(
             tokenize=True,
             add_generation_prompt=True,
             return_dict=True,
-            return_tensors="pt"
+            return_tensors="pt",
         )
 
         # 移动到设备
@@ -102,16 +90,11 @@ def transcribe_chunk(
 
         # 执行推理
         with torch.inference_mode():
-            outputs = model.generate(
-                **inputs,
-                max_new_tokens=256,
-                do_sample=False
-            )
+            outputs = model.generate(**inputs, max_new_tokens=256, do_sample=False)
 
         # 解码结果
         transcript = processor.batch_decode(
-            outputs[:, inputs.input_ids.shape[1]:],
-            skip_special_tokens=True
+            outputs[:, inputs.input_ids.shape[1] :], skip_special_tokens=True
         )[0].strip()
 
         logger.info(f"分块 {chunk_index+1} 转录成功: {transcript[:50]}...")
@@ -120,7 +103,7 @@ def transcribe_chunk(
             "chunk_index": chunk_index,
             "total_chunks": total_chunks,
             "text": transcript,
-            "success": True
+            "success": True,
         }
 
     except Exception as e:
@@ -130,5 +113,5 @@ def transcribe_chunk(
             "total_chunks": total_chunks,
             "text": "",
             "success": False,
-            "error": str(e)
+            "error": str(e),
         }

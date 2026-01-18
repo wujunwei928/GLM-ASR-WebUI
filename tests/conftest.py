@@ -1,6 +1,8 @@
 """pytest 配置和 fixtures"""
+
 import pytest
 from fastapi.testclient import TestClient
+
 from glm_asr import app
 
 

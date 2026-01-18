@@ -1,4 +1,5 @@
 """ASR 服务测试"""
+
 from glm_asr.services.asr import DEVICE, MODEL_ID
 
 
@@ -15,5 +16,6 @@ def test_model_id():
 def test_imports():
     """测试模块导入"""
     from glm_asr.services.asr import load_model, transcribe_chunk
+
     assert callable(load_model)
     assert callable(transcribe_chunk)
