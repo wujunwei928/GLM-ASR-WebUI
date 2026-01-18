@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 项目概述
 
-GLM-ASR-WebUI 是一个基于 **GLM-ASR-Nano-2512** 模型的语音识别 Web 服务，使用 FastAPI 构建，提供音频转录 REST API 和交互式 Web 界面。
+GLM-ASR-WebUI 是一个基于 **GLM-ASR-Nano-2512** 模型的语音识别 Web 服务，使用 FastAPI 构建，提供音频/视频转录 REST API 和交互式 Web 界面。
+
+**支持的视频格式**: MP4, AVI, MKV, MOV, WEBM, FLV, M4V
 
 ## 核心架构
 
@@ -22,12 +24,18 @@ GLM-ASR-WebUI 是一个基于 **GLM-ASR-Nano-2512** 模型的语音识别 Web �
    - 全局缓存 `_model` 和 `_processor`
    - 支持从 ModelScope/Hugging Face 自动下载并缓存
 
-2. **音频处理** (`split_audio()`, `get_audio_duration_ffmpeg()`)
-   - 使用 ffmpeg-python 进行音频分割和元数据提取
+2. **音频/视频处理** (`split_audio()`, `get_audio_duration_ffmpeg()`, `extract_audio_from_video()`)
+   - 使用 ffmpeg-python 进行音频分割、元数据提取和视频音频提取
    - 长音频自动分块（默认 30 秒/块）
+   - 视频文件自动提取音频为 MP3 格式（16kHz, 单声道）
    - 临时文件存储在 `/tmp/glm_asr_uploads` 和 `/tmp/glm_asr_chunks`
 
-3. **推理流程** (`transcribe_chunk()`)
+3. **视频下载** (`download_video()`)
+   - 支持从 URL 下载在线视频
+   - 文件大小限制 500MB
+   - 下载超时 10 分钟
+
+4. **推理流程** (`transcribe_chunk()`)
    - 异步分块转录，使用 `asyncio.to_thread` 避免阻塞
    - 每个分块独立处理，支持流式返回
    - 推理参数: `max_new_tokens=256`, `do_sample=False`
@@ -56,7 +64,8 @@ GLM-ASR-WebUI 是一个基于 **GLM-ASR-Nano-2512** 模型的语音识别 Web �
 | `/` | GET | Web 界面 |
 | `/health` | GET | 健康检查 |
 | `/api/v1/transcribe` | POST | 标准转录（单次返回） |
-| `/api/v1/transcribe-stream` | POST | 流式转录（推荐，支持长音频） |
+| `/api/v1/transcribe-stream` | POST | 流式转录（推荐，支持音频/视频） |
+| `/api/v1/transcribe-url` | POST | URL 音频/视频转录 |
 | `/api/v1/model/info` | GET | 模型信息 |
 | `/api/info` | GET | 服务信息 |
 
@@ -96,10 +105,11 @@ curl -X POST http://localhost:8000/api/v1/transcribe-stream \
 
 ## 代码规范要点
 
-### 音频文件处理
+### 音频/视频文件处理
 
-- 始终验证 `file.content_type.startswith("audio/")`
+- 验证文件类型：`file.content_type.startswith("audio/")` 或 `is_video_file(file.content_type)`
 - 临时文件必须清理：使用 `try...finally` 确保删除
+- 视频文件处理：先保存原始文件，提取音频后删除视频文件
 - 分块时长参数: `chunk_duration` (秒)，默认 30 秒
 
 ### 流式响应格式
@@ -155,9 +165,21 @@ const CONFIG = {
 
 ```
 .
-├── app.py              # FastAPI 主应用
-├── requirements.txt    # Python 依赖
+├── src/
+│   └── glm_asr/
+│       ├── app.py              # FastAPI 主应用
+│       ├── models.py           # 数据模型
+│       ├── services/
+│       │   └── asr.py          # ASR 服务和模型加载
+│       └── utils/
+│           ├── audio.py        # 音频处理工具
+│           └── video.py        # 视频处理工具
 ├── templates/
-│   └── index.html      # Web 界面（单文件，含内联 CSS/JS）
-└── web/static/         # 静态资源目录（可选）
+│   └── index.html              # Web 界面（单文件，含内联 CSS/JS）
+├── tests/
+│   ├── test_api.py             # API 测试
+│   ├── test_video_utils.py     # 视频工具测试
+│   └── conftest.py             # pytest 配置
+├── requirements.txt            # Python 依赖
+└── static/                     # 静态资源目录（可选）
 ```

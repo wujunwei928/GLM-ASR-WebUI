@@ -28,6 +28,7 @@
 - 🚀 **流式 API**: 长音频实时转录进度反馈
 - 🎨 **赛博朋克 UI**: 霓虹风格界面，配合动态粒子效果
 - 🎙️ **多种输入方式**: 文件上传、URL 下载、实时录音
+- 📹 **视频支持**: 支持视频文件语音识别（MP4、AVI、MKV 等）
 - 📦 **自动分块**: 长音频自动分割处理
 - ⚡ **GPU 加速**: 支持 CUDA 推理加速
 - 🔌 **REST API**: 清晰的 API 设计，易于集成
@@ -135,8 +136,8 @@ Web 界面将可通过 `http://localhost:8000` 访问
 
 1. 打开浏览器访问 `http://localhost:8000`
 2. 选择输入方式：
-   - **文件上传**: 点击或拖拽音频文件（WAV、MP3、FLAC、OGG、M4A）
-   - **URL 输入**: 输入音频文件的直接 URL
+   - **文件上传**: 点击或拖拽音频/视频文件（WAV、MP3、FLAC、OGG、M4A、MP4、AVI、MKV、MOV、WEBM）
+   - **URL 输入**: 输入音频/视频文件的直接 URL
    - **实时录音**: 点击麦克风按钮开始录音
 3. 点击"启动识别序列"（或相应按钮）
 4. 实时查看转录进度
@@ -227,7 +228,8 @@ with open('long_audio.mp3', 'rb') as f:
 | `/` | GET | Web 界面 |
 | `/health` | GET | 健康检查和模型状态 |
 | `/api/v1/transcribe` | POST | 标准转录（单次返回） |
-| `/api/v1/transcribe-stream` | POST | 流式转录（推荐） |
+| `/api/v1/transcribe-stream` | POST | 流式转录（推荐，支持音频/视频） |
+| `/api/v1/transcribe-url` | POST | URL 音频/视频转录 |
 | `/api/v1/model/info` | GET | 模型信息 |
 | `/api/info` | GET | 服务信息 |
 | `/docs` | GET | 交互式 API 文档（Swagger UI） |
@@ -255,7 +257,8 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"  # 推理设备
 - **FastAPI**: 现代化、高性能的 Web 框架
 - **Transformers**: Hugging Face 模型加载库
 - **PyTorch**: 深度学习框架
-- **ffmpeg-python**: 音频时长识别和长音频分块（>30秒）
+- **ffmpeg-python**: 音频/视频处理、时长识别和长音频分块（>30秒）
+- **requests**: 在线视频下载
 
 ### 前端技术栈
 - **原生 JavaScript**: 无框架依赖
@@ -265,15 +268,16 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"  # 推理设备
 
 ## 🎯 技术细节
 
-### 音频处理流程
+### 音频/视频处理流程
 
-1. **上传**: 音频文件保存到 `/tmp/glm_asr_uploads/`
-2. **时长检测**: FFmpeg 提取音频时长（所有文件必需）
-3. **分块**: 超过 30 秒的音频使用 FFmpeg 分割（可配置）
-4. **转录**: 每个分块独立处理
-5. **聚合**: 合并结果并返回
+1. **上传/下载**: 文件保存到 `/tmp/glm_asr_uploads/` 或从 URL 下载
+2. **视频处理**: 如为视频文件，使用 FFmpeg 提取音频
+3. **时长检测**: FFmpeg 提取音频时长（所有文件必需）
+4. **分块**: 超过 30 秒的音频使用 FFmpeg 分割（可配置）
+5. **转录**: 每个分块独立处理
+6. **聚合**: 合并结果并返回
 
-> **说明**: FFmpeg 仅用于元数据提取和音频分割。
+> **说明**: FFmpeg 用于元数据提取、音频分割和视频音频提取。
 > 实际的语音识别由 GLM-ASR 模型完成。
 
 ### 流式传输协议
