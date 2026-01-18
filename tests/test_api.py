@@ -1,6 +1,7 @@
 """API 端点测试"""
 
 import io
+import pytest
 from unittest.mock import patch, MagicMock
 
 
@@ -90,3 +91,25 @@ def test_transcribe_url_calls_download(mock_load, mock_download, client):
     )
     mock_download.assert_called_once()
     assert response.status_code == 200
+
+
+def test_video_file_integration(client):
+    """测试视频文件完整流程（需要真实视频文件）"""
+    from pathlib import Path
+
+    # 注意：这个测试需要 tests/fixtures/sample.mp4 文件
+    # 如果没有，测试会被跳过
+    video_path = Path(__file__).parent / "fixtures" / "sample.mp4"
+    if not video_path.exists():
+        pytest.skip("测试视频文件不存在")
+
+    with open(video_path, "rb") as f:
+        response = client.post(
+            "/api/v1/transcribe-stream",
+            files={"file": ("sample.mp4", f, "video/mp4")},
+            data={"chunk_duration": 10}
+        )
+
+    # 检查响应是流式的
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/x-ndjson"
