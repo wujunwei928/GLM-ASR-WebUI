@@ -14,7 +14,7 @@ exclude = [
 
 [project]
 name = "glm-asr-webui"
-version = "0.0.1"
+version = "0.0.2"
 description = "基于 GLM-ASR-Nano-2512 的语音识别 Web 服务"
 readme = "README.md"
 requires-python = ">=3.10"

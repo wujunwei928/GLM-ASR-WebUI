@@ -34,7 +34,7 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 app = FastAPI(
     title="GLM-ASR 语音识别服务",
     description="基于 GLM-ASR-Nano-2512 模型的音频转录 API",
-    version="0.0.1",
+    version="0.0.2",
 )
 
 # 配置 Jinja2 模板

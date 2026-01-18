@@ -2,7 +2,7 @@
 
 一个基于 **[GLM-ASR](https://github.com/zai-org/GLM-ASR)** 模型的现代化语音识别 Web 服务，拥有赛博朋克风格界面和长音频流式转录功能。
 
-![版本](https://img.shields.io/badge/版本-0.0.1-blue)
+![版本](https://img.shields.io/badge/版本-0.0.2-blue)
 ![许可证](https://img.shields.io/badge/许可证-Apache%202.0-green)
 ![Python](https://img.shields.io/badge/python-3.12+-brightgreen)
 
