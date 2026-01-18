@@ -20,6 +20,7 @@ from fastapi.templating import Jinja2Templates
 from glm_asr.models import HealthResponse, TranscriptionResponse
 from glm_asr.services.asr import DEVICE, load_model, transcribe_chunk
 from glm_asr.utils.audio import get_audio_duration, get_audio_duration_ffmpeg, split_audio
+from glm_asr.utils.video import extract_audio_from_video, is_video_file
 
 # 配置日志
 logging.basicConfig(
@@ -115,33 +116,37 @@ async def health_check():
 
 @app.post("/api/v1/transcribe-stream")
 async def transcribe_audio_stream(
-    file: UploadFile = File(..., description="音频文件(WAV, MP3 等格式)"),
+    file: UploadFile = File(..., description="音频或视频文件"),
     chunk_duration: int = Form(30, description="分块时长(秒,默认 30)"),
 ):
     """
-    音频流式转录接口 - 支持长音频分割和流式返回
+    音频/视频流式转录接口 - 支持长音频/视频分割和流式返回
 
     参数:
-    - file: 音频文件(支持 WAV, MP3 等常见格式)
+    - file: 音频或视频文件(支持 WAV, MP3, MP4, AVI 等常见格式)
     - chunk_duration: 分块时长(秒,默认 30)
 
     返回:
     - 流式 JSON 响应,每个分块转录完成后立即返回
     """
 
-    # 验证文件类型
-    if not file.content_type.startswith("audio/"):
+    # 验证文件类型（同时支持音频和视频）
+    is_video = is_video_file(file.content_type)
+    is_audio = file.content_type.startswith("audio/")
+
+    if not (is_audio or is_video):
         logger.warning(f"不支持的文件类型: {file.content_type}")
         return StreamingResponse(
-            _iter_json([{"error": f"不支持的文件类型: {file.content_type}"}]),
+            _iter_json([{"error": f"不支持的文件类型: {file.content_type},请上传音频或视频文件"}]),
             media_type="application/x-ndjson",
         )
 
-    temp_file = None
-    chunk_files = []
+    temp_video = None  # 视频临时文件
+    temp_file = None   # 音频文件（可能是原音频或提取的音频）
+    chunk_files = []   # 音频分块
 
     async def generate_transcription() -> AsyncGenerator[str, None]:
-        nonlocal temp_file, chunk_files
+        nonlocal temp_video, temp_file, chunk_files
 
         try:
             # 加载模型
@@ -157,6 +162,13 @@ async def transcribe_audio_stream(
                 buffer.write(content)
 
             logger.info(f"文件已保存: {temp_file}")
+
+            # 如果是视频，提取音频
+            if is_video:
+                logger.info(f"检测到视频文件，开始提取音频...")
+                temp_video = temp_file  # 保存视频引用以便清理
+                temp_file = extract_audio_from_video(temp_video)
+                logger.info(f"音频提取完成: {temp_file}")
 
             # 获取音频时长
             duration = get_audio_duration_ffmpeg(temp_file)
@@ -241,6 +253,15 @@ async def transcribe_audio_stream(
 
         finally:
             # 清理临时文件
+            # 先清理视频文件（如果存在）
+            if temp_video and temp_video.exists():
+                try:
+                    temp_video.unlink()
+                    logger.info(f"视频文件已删除: {temp_video}")
+                except Exception as e:
+                    logger.warning(f"删除视频文件失败: {str(e)}")
+
+            # 清理音频分块
             for chunk_file in chunk_files:
                 try:
                     if chunk_file.exists():
@@ -249,6 +270,7 @@ async def transcribe_audio_stream(
                 except Exception as e:
                     logger.warning(f"删除分块文件失败: {str(e)}")
 
+            # 最后清理音频文件
             if temp_file and temp_file.exists():
                 try:
                     temp_file.unlink()
