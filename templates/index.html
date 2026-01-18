@@ -2276,9 +2276,9 @@
             <div class="tab-content active" id="upload">
                 <div class="upload-area" id="uploadArea">
                     <span class="upload-icon">📤</span>
-                    <h3>点击或拖拽音频文件到此处</h3>
-                    <p>支持格式: WAV, MP3, FLAC, OGG, M4A</p>
-                    <input type="file" id="fileInput" accept="audio/*" style="display: none;">
+                    <h3>点击或拖拽音频/视频文件到此处</h3>
+                    <p>支持格式: WAV, MP3, FLAC, OGG, M4A, MP4, AVI, MKV, MOV, WEBM</p>
+                    <input type="file" id="fileInput" accept="audio/*,video/*" style="display: none;">
                 </div>
 
                 <div id="fileInfo"></div>
@@ -2294,7 +2294,7 @@
             <!-- URL 输入标签页 -->
             <div class="tab-content" id="url">
                 <div class="input-group">
-                    <label for="urlInput">音频 URL 地址</label>
+                    <label for="urlInput">音频/视频 URL 地址</label>
                     <input type="url" id="urlInput" placeholder="https://example.com/audio.wav">
                 </div>
 
