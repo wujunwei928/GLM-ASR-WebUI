@@ -8,6 +8,7 @@ GLM-ASR FastAPI 语音识别服务
 import asyncio
 import json
 import logging
+import uuid
 from collections.abc import AsyncGenerator
 from pathlib import Path
 
@@ -156,7 +157,9 @@ async def transcribe_audio_stream(
             temp_dir = Path("/tmp/glm_asr_uploads")
             temp_dir.mkdir(parents=True, exist_ok=True)
 
-            temp_file = temp_dir / f"{file.filename}"
+            # 使用 UUID 生成唯一文件名，避免文件名过长错误
+            file_ext = Path(file.filename).suffix if file.filename else ".mp3"
+            temp_file = temp_dir / f"{uuid.uuid4().hex}{file_ext}"
             with temp_file.open("wb") as buffer:
                 content = await file.read()
                 buffer.write(content)
@@ -319,7 +322,9 @@ async def transcribe_audio(file: UploadFile = File(..., description="音频文�
         temp_dir = Path("/tmp/glm_asr_uploads")
         temp_dir.mkdir(parents=True, exist_ok=True)
 
-        temp_file = temp_dir / f"{file.filename}"
+        # 使用 UUID 生成唯一文件名，避免文件名过长错误
+        file_ext = Path(file.filename).suffix if file.filename else ".mp3"
+        temp_file = temp_dir / f"{uuid.uuid4().hex}{file_ext}"
         with temp_file.open("wb") as buffer:
             content = await file.read()
             buffer.write(content)

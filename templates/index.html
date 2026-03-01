@@ -2916,7 +2916,10 @@
 
         function appendStreamResult(text, chunkIndex, totalChunks) {
             elements.resultArea.classList.add('active');
-            elements.resultText.innerHTML = '';
+            // 仅在第一个分块时清空结果区域
+            if (chunkIndex === 0) {
+                elements.resultText.innerHTML = '';
+            }
 
             const chunkMarker = document.createElement('div');
             chunkMarker.className = 'chunk-marker';
