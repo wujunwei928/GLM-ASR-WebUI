@@ -2982,6 +2982,7 @@
             }
 
             const resultChunks = [];
+            let buffer = '';  // 缓冲区：存储跨 chunk 的不完整行
 
             try {
                 const response = await fetch(`${CONFIG.API_BASE_URL}${endpoint}`, {
@@ -3000,8 +3001,12 @@
                     const { done, value } = await reader.read();
                     if (done) break;
 
-                    const chunk = decoder.decode(value, { stream: true });
-                    const lines = chunk.split('\n');
+                    // 将新数据追加到缓冲区
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+
+                    // 保留最后一个可能不完整的行到缓冲区
+                    buffer = lines.pop() || '';
 
                     for (const line of lines) {
                         if (!line.trim()) continue;
@@ -3035,6 +3040,18 @@
                         } catch (parseError) {
                             console.error('解析响应失败:', line, parseError);
                         }
+                    }
+                }
+
+                // 处理缓冲区中剩余的数据
+                if (buffer.trim()) {
+                    try {
+                        const data = JSON.parse(buffer);
+                        if (data.type === 'complete') {
+                            showFinalResult(resultChunks.map(r => r.text).join(' '));
+                        }
+                    } catch (parseError) {
+                        console.error('解析最终缓冲区失败:', buffer, parseError);
                     }
                 }
 
