@@ -91,6 +91,38 @@
             word-wrap: break-word;
         }
 
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .result-header h3 {
+            margin: 0;
+        }
+
+        .copy-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .copy-btn.copied {
+            pointer-events: none;
+        }
+
         /* 错误消息 */
         .error {
             padding: var(--spacing-md);
@@ -507,9 +539,24 @@
         [data-theme="cyberpunk"] .result-area h3 {
             color: var(--neon-green);
             font-size: 1.3rem;
-            margin-bottom: var(--spacing-md);
             text-transform: uppercase;
             letter-spacing: 2px;
+        }
+
+        [data-theme="cyberpunk"] .copy-btn {
+            background: rgba(0, 255, 136, 0.1);
+            color: var(--neon-green);
+            border: 1px solid var(--neon-green);
+        }
+
+        [data-theme="cyberpunk"] .copy-btn:hover {
+            background: rgba(0, 255, 136, 0.2);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.4);
+        }
+
+        [data-theme="cyberpunk"] .copy-btn.copied {
+            background: rgba(0, 255, 136, 0.3);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.6);
         }
 
         [data-theme="cyberpunk"] .result-text {
@@ -730,7 +777,22 @@
             color: var(--gray-900);
             font-size: 1.125rem;
             font-weight: 600;
-            margin-bottom: 16px;
+        }
+
+        [data-theme="minimal"] .copy-btn {
+            background: var(--gray-100);
+            color: var(--gray-700);
+            border: 1px solid var(--gray-200);
+        }
+
+        [data-theme="minimal"] .copy-btn:hover {
+            background: var(--gray-200);
+        }
+
+        [data-theme="minimal"] .copy-btn.copied {
+            background: rgba(52, 199, 89, 0.1);
+            color: var(--accent-green);
+            border-color: var(--accent-green);
         }
 
         [data-theme="minimal"] .result-text {
@@ -1012,7 +1074,23 @@
             color: var(--text-primary);
             font-size: 1rem;
             font-weight: 600;
-            margin-bottom: 12px;
+        }
+
+        [data-theme="dark-pro"] .copy-btn {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-default);
+        }
+
+        [data-theme="dark-pro"] .copy-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        [data-theme="dark-pro"] .copy-btn.copied {
+            background: rgba(63, 185, 80, 0.15);
+            color: var(--accent-green);
+            border-color: var(--accent-green);
         }
 
         [data-theme="dark-pro"] .result-text {
@@ -1299,7 +1377,19 @@
             -webkit-text-fill-color: transparent;
             font-size: 1.25rem;
             font-weight: 800;
-            margin-bottom: 18px;
+        }
+
+        [data-theme="sunset"] .copy-btn {
+            background: linear-gradient(135deg, #ff9a56, #ff6b6b);
+            color: var(--white);
+        }
+
+        [data-theme="sunset"] .copy-btn:hover {
+            box-shadow: 0 4px 15px rgba(255, 154, 86, 0.4);
+        }
+
+        [data-theme="sunset"] .copy-btn.copied {
+            background: linear-gradient(135deg, #51cf66, #37b24d);
         }
 
         [data-theme="sunset"] .result-text {
@@ -1586,7 +1676,19 @@
             color: var(--forest-dark);
             font-size: 1.1875rem;
             font-weight: 800;
-            margin-bottom: 20px;
+        }
+
+        [data-theme="forest"] .copy-btn {
+            background: linear-gradient(135deg, var(--leaf-green), var(--spring-green));
+            color: var(--white);
+        }
+
+        [data-theme="forest"] .copy-btn:hover {
+            box-shadow: 0 4px 15px rgba(82, 168, 117, 0.4);
+        }
+
+        [data-theme="forest"] .copy-btn.copied {
+            background: linear-gradient(135deg, #40c057, #37b24d);
         }
 
         [data-theme="forest"] .result-text {
@@ -1945,10 +2047,23 @@
             color: var(--aurora-green);
             font-size: 1.125rem;
             font-weight: 800;
-            margin-bottom: 20px;
             text-transform: uppercase;
             letter-spacing: 0.1em;
             text-shadow: 0 0 20px rgba(34, 211, 238, 0.6);
+        }
+
+        [data-theme="aurora"] .copy-btn {
+            background: linear-gradient(90deg, #06b6d4, #22d3ee);
+            color: var(--deep-abyss);
+            font-weight: 700;
+        }
+
+        [data-theme="aurora"] .copy-btn:hover {
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
+        }
+
+        [data-theme="aurora"] .copy-btn.copied {
+            background: linear-gradient(90deg, #34d399, #22d3ee);
         }
 
         [data-theme="aurora"] .result-text {
@@ -2364,7 +2479,12 @@
 
             <!-- 识别结果 -->
             <div class="result-area" id="resultArea">
-                <h3>🎯 识别结果</h3>
+                <div class="result-header">
+                    <h3>🎯 识别结果</h3>
+                    <button class="copy-btn" id="copyBtn" onclick="copyResult()" style="display: none;">
+                        📋 复制
+                    </button>
+                </div>
                 <div class="result-text" id="resultText"></div>
                 <div id="resultStatus"></div>
             </div>
@@ -2936,11 +3056,40 @@
             elements.resultText.innerHTML = fullText;
             elements.resultArea.classList.add('active');
 
+            // 显示复制按钮
+            const copyBtn = document.getElementById('copyBtn');
+            if (copyBtn) {
+                copyBtn.style.display = 'inline-flex';
+            }
+
             elements.resultStatus.innerHTML = `
                 <span class="status-badge success">
                     ✅ 识别完成
                 </span>
             `;
+        }
+
+        // 复制识别结果
+        function copyResult() {
+            const resultText = elements.resultText.innerText || elements.resultText.textContent;
+            const copyBtn = document.getElementById('copyBtn');
+
+            navigator.clipboard.writeText(resultText).then(() => {
+                // 显示复制成功状态
+                copyBtn.innerHTML = '✅ 已复制';
+                copyBtn.classList.add('copied');
+
+                setTimeout(() => {
+                    copyBtn.innerHTML = '📋 复制';
+                    copyBtn.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('复制失败:', err);
+                copyBtn.innerHTML = '❌ 失败';
+                setTimeout(() => {
+                    copyBtn.innerHTML = '📋 复制';
+                }, 2000);
+            });
         }
 
         // ==================== UI 更新 ====================
