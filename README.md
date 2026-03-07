@@ -6,22 +6,6 @@
 ![许可证](https://img.shields.io/badge/许可证-Apache%202.0-green)
 ![Python](https://img.shields.io/badge/python-3.12+-brightgreen)
 
-<div align="center">
-
-##  🚀 GLM Coding 限时优惠！性能强劲 量大管饱
-
-### 🎁 智谱 GLM Coding 超值订阅，邀你一起"薅羊毛"！
-
-**本项目全程使用GLM进行开发, 绝对性能够用, 又量大管饱.**
-
-[立即开拼，享限时惊喜价, 首购低至4折！](https://www.bigmodel.cn/glm-coding?ic=KUS7WQB5UI)
-
-<img src="resources/BigmodelPoster.png" alt="拼好模活动海报" width="300">
-
----
-
-</div>
-
 ## ✨ 特性
 
 - 🎯 **高精度识别**: 采用 GLM-ASR-Nano-2512 模型，提供领先的语音识别能力
